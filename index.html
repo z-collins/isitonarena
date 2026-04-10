@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Is It On Arena?</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+  <div id="app">
+    <h1>Is It On Arena?</h1>
+    <p>Paste your decklist below.</p>
+
+    <div id="input-section">
+      <textarea id="decklist-input" placeholder="1 Lightning Bolt&#10;1 Counterspell&#10;..."></textarea>
+      <button id="check-button">Check Legality</button>
+    </div>
+
+    <div id="loading" class="hidden">
+      <span id="spinner"></span>
+      <span id="loading-message">Parsing decklist...</span>
+    </div>
+
+    <div id="summary" class="hidden">
+      <span class="summary-on">✔ <strong id="count-on">0</strong> on Arena</span>
+      <span class="summary-off">✘ <strong id="count-off">0</strong> not on Arena</span>
+    </div>
+
+    <div id="results"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
