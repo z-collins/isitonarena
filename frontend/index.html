@@ -9,10 +9,23 @@
   <body>
   <div id="app">
     <h1>Is It On Arena?</h1>
-    <p>Paste your decklist below.</p>
 
     <div id="input-section">
-      <textarea id="decklist-input" placeholder="1 Lightning Bolt&#10;1 Counterspell&#10;..."></textarea>
+      <div id="tabs">
+        <button class="tab active" data-tab="paste">Paste Decklist</button>
+        <button class="tab" data-tab="url">Moxfield URL</button>
+      </div>
+
+      <div id="tab-paste" class="tab-content">
+        <p>Paste your Moxfield decklist export below.</p>
+        <textarea id="decklist-input" placeholder="1 Lightning Bolt&#10;1 Counterspell&#10;..."></textarea>
+      </div>
+
+      <div id="tab-url" class="tab-content hidden">
+        <p>Paste a Moxfield deck URL below.</p>
+        <input type="text" id="url-input" placeholder="https://www.moxfield.com/decks/abc123" />
+      </div>
+
       <button id="check-button">Check Legality</button>
     </div>
 

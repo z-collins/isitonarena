@@ -9,6 +9,18 @@ const countOff = document.getElementById("count-off");
 
 const BASIC_LANDS = ["Plains", "Island", "Swamp", "Mountain", "Forest"];
 
+// tab switching
+const tabs = document.querySelectorAll(".tab");
+tabs.forEach(tab => {
+  tab.addEventListener("click", function () {
+    tabs.forEach(t => t.classList.remove("active"));
+    this.classList.add("active");
+
+    document.querySelectorAll(".tab-content").forEach(c => c.classList.add("hidden"));
+    document.getElementById("tab-" + this.dataset.tab).classList.remove("hidden");
+  });
+});
+
 function parseDecklist(text) {
   const lines = text.split("\n");
   const cards = [];
@@ -25,6 +37,42 @@ function parseDecklist(text) {
     if (BASIC_LANDS.includes(cardName)) continue;
 
     cards.push(cardName);
+  }
+
+  return cards;
+}
+
+function extractDeckId(url) {
+  // moxfield urls look like https://www.moxfield.com/decks/abc123
+  // we just want the last segment after /decks/
+  const match = url.match(/\/decks\/([a-zA-Z0-9_-]+)/);
+  return match ? match[1] : null;
+}
+
+async function fetchMoxfieldDeck(deckId) {
+  const response = await fetch(
+    `https://isitonarena-proxy.isitonarena.workers.dev/?deckId=${deckId}`
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch deck — is the URL correct and the deck public?");
+  }
+
+  const data = await response.json();
+  const cards = [];
+
+  const BASIC_LANDS = ["Plains", "Island", "Swamp", "Mountain", "Forest"];
+
+  // pull cards from mainboard and commanders
+  const sections = [data.mainboard, data.commanders, data.sideboard, data.considering];
+
+  for (const section of sections) {
+    if (!section) continue;
+    for (const key of Object.keys(section)) {
+      const cardName = section[key].card.name;
+      if (BASIC_LANDS.includes(cardName)) continue;
+      cards.push(cardName);
+    }
   }
 
   return cards;
@@ -93,22 +141,55 @@ function displayResults(results) {
 }
 
 button.addEventListener("click", async function () {
-  const text = input.value;
-  if (!text.trim()) return;
+  const activeTab = document.querySelector(".tab.active").dataset.tab;
 
-  // swap input for loading
+  let cardNames = [];
+
   inputSection.classList.add("hidden");
   loading.classList.remove("hidden");
 
-  loadingMessage.textContent = "Parsing decklist...";
-  const cardNames = parseDecklist(text);
+  try {
+    if (activeTab === "paste") {
+      const text = input.value;
+      if (!text.trim()) {
+        inputSection.classList.remove("hidden");
+        loading.classList.add("hidden");
+        return;
+      }
+      loadingMessage.textContent = "Parsing decklist...";
+      cardNames = parseDecklist(text);
 
-  loadingMessage.textContent = "Checking Arena legality...";
-  const results = await checkScryfall(cardNames);
+    } else if (activeTab === "url") {
+      const url = document.getElementById("url-input").value.trim();
+      if (!url) {
+        inputSection.classList.remove("hidden");
+        loading.classList.add("hidden");
+        return;
+      }
+      loadingMessage.textContent = "Fetching deck from Moxfield...";
+      const deckId = extractDeckId(url);
 
-  // swap loading for summary + results
-  loading.classList.add("hidden");
-  summary.classList.remove("hidden");
+      if (!deckId) {
+        alert("Couldn't find a deck ID in that URL — make sure it's a valid Moxfield deck link.");
+        inputSection.classList.remove("hidden");
+        loading.classList.add("hidden");
+        return;
+      }
 
-  displayResults(results);
+      cardNames = await fetchMoxfieldDeck(deckId);
+    }
+
+    loadingMessage.textContent = "Checking Arena legality...";
+    const results = await checkScryfall(cardNames);
+
+    loading.classList.add("hidden");
+    summary.classList.remove("hidden");
+
+    displayResults(results);
+
+  } catch (err) {
+    alert(err.message);
+    loading.classList.add("hidden");
+    inputSection.classList.remove("hidden");
+  }
 });
